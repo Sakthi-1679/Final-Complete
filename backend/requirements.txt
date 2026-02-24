@@ -2,10 +2,10 @@ flask
 flask-cors
 gunicorn
 numpy
-torch
+torch==2.5.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 pandas
 python-jose[cryptography]
 mysql-connector-python
 python-dotenv
-tensorflow
+tensorflow-cpu==2.18.0
 opencv-python-headless
