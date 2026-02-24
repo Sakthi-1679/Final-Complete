@@ -2,7 +2,8 @@ flask
 flask-cors
 gunicorn
 numpy
-torch==2.5.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.6.0+cpu
 pandas
 python-jose[cryptography]
 mysql-connector-python
