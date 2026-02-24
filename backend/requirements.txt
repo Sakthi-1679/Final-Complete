@@ -5,7 +5,7 @@ numpy
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.6.0+cpu
 pandas
-python-jose[cryptography]
+PyJWT==2.11.0
 mysql-connector-python
 python-dotenv
 tensorflow-cpu==2.18.0
