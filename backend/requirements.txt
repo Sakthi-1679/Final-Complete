@@ -1,0 +1,11 @@
+flask
+flask-cors
+gunicorn
+numpy
+torch
+pandas
+python-jose[cryptography]
+mysql-connector-python
+python-dotenv
+tensorflow
+opencv-python-headless

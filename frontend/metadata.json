@@ -1,0 +1,9 @@
+
+{
+  "name": "StreamFlix Pro",
+  "description": "A production-grade OTT streaming platform with a custom admin panel, recommendation engine, and AI-powered reaction feature.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

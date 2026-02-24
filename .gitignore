@@ -1,0 +1,79 @@
+# Environment variables
+.env
+.env.*
+*.env
+!.env.example
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv*/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.pyo
+*.pyc
+
+# ML Models (large files - optional to exclude)
+# backend/models/*.pth
+# backend/models/*.h5
+
+# Logs
+*.log
+backend/backend_err.txt
+backend/backend_out.txt
+backend/pipeline_logs/
+
+# Database / sensitive data
+*.sqlite3
+*.db
+backend/users.json
+backend/subscriptions.json
+backend/interactions.csv
+backend/user_events.csv
+backend/mood_log.csv
+
+# Uploads (user-generated)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Temp
+*.tmp
+*.temp

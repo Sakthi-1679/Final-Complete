@@ -1,0 +1,366 @@
+{
+  "info": {
+    "_postman_id": "mood-recommender-test-suite-v1",
+    "name": "Mood Recommender – Full API Test Suite",
+    "description": "Complete test collection for the hybrid mood-based movie recommendation API.\nCovers: auth, recommend, interact, model-info, retrain, security.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL",  "value": "http://127.0.0.1:5000" },
+    { "key": "TOKEN",     "value": "" },
+    { "key": "USERNAME",  "value": "postman_test_user" },
+    { "key": "PASSWORD",  "value": "Test@12345" },
+    { "key": "MOVIE_ID",  "value": "1" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"{{USERNAME}}\", \"email\": \"pm@test.com\", \"password\": \"{{PASSWORD}}\"}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200 or 409 (already exists)\", () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201, 409]);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login – Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"{{USERNAME}}\", \"password\": \"{{PASSWORD}}\"}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Returns token\", () => {",
+              "  const j = pm.response.json();",
+              "  pm.expect(j).to.have.property('token');",
+              "  pm.collectionVariables.set('TOKEN', j.token);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login – Wrong Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"{{USERNAME}}\", \"password\": \"wrongpassword\"}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+            ]}
+          }]
+        },
+        {
+          "name": "Get Profile – Authenticated",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/auth/profile"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Has username\", () => {",
+              "  pm.expect(pm.response.json()).to.have.property('username');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Get Profile – No Token",
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/auth/profile"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 401 or 403\", () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+
+    {
+      "name": "Hybrid Recommend",
+      "item": [
+        {
+          "name": "Recommend – Valid (happy)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\": \"happy\", \"user_id\": \"{{USERNAME}}\", \"top_k\": 5}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Returns recommendations array\", () => {",
+              "  const j = pm.response.json();",
+              "  pm.expect(j.recommendations).to.be.an('array');",
+              "  pm.expect(j.recommendations.length).to.equal(5);",
+              "  if (j.recommendations.length > 0) {",
+              "    pm.collectionVariables.set('MOVIE_ID', j.recommendations[0].id);",
+              "  }",
+              "});",
+              "pm.test(\"Response time < 500ms\", () => {",
+              "  pm.expect(pm.response.responseTime).to.be.below(500);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Recommend – Cold Start User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\": \"happy\", \"user_id\": \"brand_new_user_12345\", \"top_k\": 5}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Returns results for cold-start user\", () => {",
+              "  pm.expect(pm.response.json().recommendations.length).to.be.above(0);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Recommend – Missing mood",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": { "mode": "raw", "raw": "{\"user_id\": \"user_1\", \"top_k\": 5}" }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"No 5xx error on missing mood\", () => {",
+              "  pm.expect(pm.response.code).to.not.equal(500);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Recommend – SQL Injection in user_id",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\": \"happy\", \"user_id\": \"' OR '1'='1\", \"top_k\": 5}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"SQL injection does not cause 500\", () => {",
+              "  pm.expect(pm.response.code).to.not.equal(500);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Recommend – XSS in mood",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\": \"<script>alert(1)</script>\", \"user_id\": \"user_1\", \"top_k\": 5}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"XSS not reflected in response\", () => {",
+              "  pm.expect(pm.response.text()).to.not.include('<script>');",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Recommend – Large top_k",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/recommend",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mood\": \"happy\", \"user_id\": \"user_1\", \"top_k\": 9999}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200 and clamped results\", () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "  pm.expect(pm.response.json().recommendations.length).to.be.below(500);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+
+    {
+      "name": "Interact / Feedback",
+      "item": [
+        {
+          "name": "Interact – Like",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/interact",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"{{USERNAME}}\", \"movie_id\": \"{{MOVIE_ID}}\", \"movie_title\": \"Test\", \"emotion\": \"happy\", \"action\": \"like\", \"rating\": 5.0, \"watch_time\": 300}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]}
+          }]
+        },
+        {
+          "name": "Interact – Dislike",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/interact",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"{{USERNAME}}\", \"movie_id\": \"{{MOVIE_ID}}\", \"movie_title\": \"Test\", \"emotion\": \"sad\", \"action\": \"dislike\", \"rating\": 1.0, \"watch_time\": 10}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]}
+          }]
+        },
+        {
+          "name": "Interact – SQL injection in movie_id",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{BASE_URL}}/hybrid/interact",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\": \"user\", \"movie_id\": \"1; DROP TABLE movies; --\", \"action\": \"like\"}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"No 500 on SQL injection\", () => {",
+              "  pm.expect(pm.response.code).to.not.equal(500);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+
+    {
+      "name": "Model Info & Retrain",
+      "item": [
+        {
+          "name": "GET /hybrid/model-info",
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/hybrid/model-info"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"model_loaded = true\", () => {",
+              "  pm.expect(pm.response.json().model_loaded).to.equal(true);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "GET /retrain/status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/retrain/status"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Status 200 or 401\", () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "POST /retrain/trigger",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/retrain/trigger"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.test(\"Triggered or access-controlled\", () => {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 202, 401, 403]);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    }
+  ]
+}
