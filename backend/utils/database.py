@@ -18,14 +18,21 @@ except ImportError:
     print("[WARN] python-dotenv not installed, using system environment variables")
 
 # Database configuration with environment variables
+_ssl_ca = os.getenv('DB_SSL_CA', '')
+
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'user': os.getenv('DB_USER', 'root'),
     'password': os.getenv('DB_PASSWORD', ''),
     'database': os.getenv('DB_NAME', 'hybrid_recommender_db'),
     'port': int(os.getenv('DB_PORT', '3306')),
-    'autocommit': True
+    'autocommit': True,
 }
+
+# Add SSL config for Aiven MySQL (required when DB_SSL_CA is set)
+if _ssl_ca:
+    DB_CONFIG['ssl_ca'] = _ssl_ca
+    DB_CONFIG['ssl_verify_cert'] = True
 
 # Debug: Show connection config (without password)
 print(f"[DB Config] Host: {DB_CONFIG['host']}, User: {DB_CONFIG['user']}, DB: {DB_CONFIG['database']}")
